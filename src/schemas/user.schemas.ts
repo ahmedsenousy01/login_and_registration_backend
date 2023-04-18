@@ -28,6 +28,16 @@ const UserSchemas = {
             password: passwordValidation,
         }),
     }),
+    uploadImage: z.object({
+        file: z.object({
+            mimetype: z.enum([
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+                "image/jfif"
+            ]),
+        }),
+    }),
 };
 
 export default UserSchemas;

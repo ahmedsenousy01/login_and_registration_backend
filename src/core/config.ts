@@ -72,5 +72,11 @@ export default {
         local: {
             uploadsDirectory: "@/uploads/images",
         },
+        aws_s3: {
+            bucketName: process.env.AWS_S3_BUCKET_NAME as string,
+            bucketRegion: process.env.AWS_S3_BUCKET_REGION as string,
+            accessKey: process.env.AWS_S3_ACCESS_KEY as string,
+            secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY as string,
+        }
     },
 };

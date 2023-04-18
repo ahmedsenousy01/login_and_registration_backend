@@ -5,6 +5,8 @@ import validationMiddleware from "@/middleware/validation.middleware";
 import UserService from "@/services/user.service";
 import { jwtTokenRequiringMiddleware } from "@/middleware/jwt.middleware";
 import catchAsyncError from "@/utils/catchAsyncError";
+import { multerMiddleware } from "@/middleware/multer.middleware";
+import MediaStorageService from "@/services/mediaStorage.service";
 
 class UserController implements Controller {
     public path = "/users";
@@ -23,11 +25,19 @@ class UserController implements Controller {
         );
 
         this.router.post(
+            `${this.path}/upload-profile-picture`,
+            jwtTokenRequiringMiddleware,
+            multerMiddleware,
+            validationMiddleware(UserSchemas.uploadImage),
+            catchAsyncError(this.uploadProfilePicture)
+        );
+
+        this.router.post(
             `${this.path}/login`,
             validationMiddleware(UserSchemas.login),
             catchAsyncError(this.login)
         );
-        
+
         this.router.post(
             `${this.path}/request-verification-code`,
             jwtTokenRequiringMiddleware,
@@ -41,7 +51,7 @@ class UserController implements Controller {
         );
 
         this.router.get(
-            `${this.path}/:id`,
+            `${this.path}/details`,
             jwtTokenRequiringMiddleware,
             catchAsyncError(this.getUserById)
         );
@@ -59,11 +69,16 @@ class UserController implements Controller {
         );
 
         this.router.delete(
+            `${this.path}/profile-picture`,
+            jwtTokenRequiringMiddleware,
+            catchAsyncError(this.deleteProfilePicture)
+        );
+
+        this.router.delete(
             `${this.path}/:id`,
             jwtTokenRequiringMiddleware,
             catchAsyncError(this.deleteUser)
         );
-
     }
 
     async create(req: Request, res: Response): Promise<Response> {
@@ -83,9 +98,18 @@ class UserController implements Controller {
     }
 
     async getUserById(req: Request, res: Response): Promise<Response> {
-        const { id } = req.params;
+        const { id } = res.locals.token;
         const user = await UserService.GetUser(id);
-        return res.status(200).json({ data: user });
+        const data = {
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+            email: user?.email,
+            isVerified: user?.isVerified,
+            profilePicture: (
+                await MediaStorageService.generateProfilePictureUrl(id)
+            ).imageUrl,
+        };
+        return res.status(200).json({ data });
     }
 
     async updateUser(req: Request, res: Response): Promise<Response> {
@@ -140,6 +164,40 @@ class UserController implements Controller {
         return res
             .status(statusCode)
             .json({ message: serviceResponse.message });
+    }
+
+    async uploadProfilePicture(req: Request, res: Response): Promise<Response> {
+        const { id } = res.locals.token;
+        const user = await UserService.GetUser(id);
+        let serviceResponse;
+
+        if (user?.profilePicture) {
+            serviceResponse = await MediaStorageService.updateImage(
+                req.file,
+                user?.profilePicture
+            );
+        } else {
+            serviceResponse = await MediaStorageService.uploadImage(req.file);
+        }
+
+        if (serviceResponse?.status) {
+            const UserServiceResponse = await UserService.UpdateUser(id, {
+                profilePicture: serviceResponse.imageName,
+            });
+            if (
+                UserServiceResponse?.profilePicture ===
+                serviceResponse.imageName
+            )
+                return res
+                    .status(200)
+                    .json({ message: "Image uploaded successfully" });
+        }
+
+        return res.status(400).json({ message: "Image upload failed" });
+    }
+
+    async deleteProfilePicture(req: Request, res: Response): Promise<void> {
+        const { id } = res.locals.token;
     }
 }
 
