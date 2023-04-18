@@ -4,6 +4,7 @@ import { AnyZodObject, z as zod, ZodError } from "zod";
 function validateResource(schema: AnyZodObject = zod.object({})) {
 	return (req: Request, res: Response, next: NextFunction) => {
 		const parsed = schema.safeParse({
+			file: req.file,
 			body: req.body,
 			query: req.query,
 			params: req.params

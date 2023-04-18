@@ -49,11 +49,12 @@ class UserService {
             firstName?: string;
             lastName?: string;
             email?: string;
+            profilePicture?: string | null;
             verificationCode?: string | null;
             isVerified?: boolean;
         }
     ): Promise<User | null> {
-        return await this.model.findByIdAndUpdate({ _id: id }, data).exec();
+        return await this.model.findByIdAndUpdate({ _id: id }, data, {new: true}).exec();
     }
 
     public async DeleteUser(id: string): Promise<User | null> {

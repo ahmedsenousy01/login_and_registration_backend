@@ -5,6 +5,7 @@ export default interface User extends Document {
     lastName: string;
     email: string;
     password: string;
+    profilePicture: string | null;
     isVerified: boolean;
-    verificationCode: string;
+    verificationCode: string | null;
 }

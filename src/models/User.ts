@@ -18,6 +18,10 @@ const schema = new Schema({
         type: String,
         required: true,
     },
+    profilePicture: {
+        type: String,
+        default: null
+    },
     isVerified: {
         type: Boolean,
         required: true,
